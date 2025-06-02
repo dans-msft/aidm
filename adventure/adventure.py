@@ -392,8 +392,8 @@ def make_structured_request(system_prompt: str, user_prompt: str, second_system_
         "role": "user",
         "content": [
             {
-            "type": "text",
-            "text": user_prompt
+                "type": "text",
+                "text": user_prompt
             }
         ]
     })
