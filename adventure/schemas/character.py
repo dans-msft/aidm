@@ -107,7 +107,7 @@ character_schema = {
     "required": [
         "Name", "Pronouns", "Race", "Class", "Level", "XP", "HP", "Max_HP",
         "Status", "Gold", "AC", "Abilities", "Proficiencies", "Magic",
-        "Spell Effects", "Inventory"
+        "Spell_Effects", "Inventory"
     ],
     "additionalProperties": False
 }

@@ -7,6 +7,7 @@ action_schema = {
     "type": "object",
     "properties": {
         "action_type": {"type": "string"},
+        "target": {"type": "string"},
         "how_to_resolve": {"type": "string"},
         "advantage": {"type": "boolean"},
         "disadvantage": {"type": "boolean"},
@@ -16,7 +17,7 @@ action_schema = {
         "result_if_failed": {"type": "string"}
     },
     "required": [
-        "action_type", "how_to_resolve", "advantage", "disadvantage",
+        "action_type", "target", "how_to_resolve", "advantage", "disadvantage",
         "dice_to_roll", "number_to_beat", "result_if_successful", "result_if_failed"
     ],
     "additionalProperties": False

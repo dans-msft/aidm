@@ -10,22 +10,58 @@ from ..schemas import round_schema, response_schema, game_state_schema, response
 from ..prompts import ACTION_RULES, GAME_RULES, RESPONSE_RULES, STATE_CHANGE_RULES, RESPONSE_AND_STATE_CHANGE_RULES, DEATH_RULES
 from adventure.llm.client import LLMClient
 from adventure.core.game_state import GameState
+from adventure.core.location import LocationManager
 
 class ActionResolver:
     """Resolves player commands into game actions."""
     
-    def __init__(self, llm_client: LLMClient) -> None:
+    def __init__(self, llm_client: LLMClient, location_manager: Optional[LocationManager] = None) -> None:
         """Initialize the action resolver.
         
         Args:
             llm_client: The LLM client to use for action resolution.
+            location_manager: Optional location manager for world context.
         """
         self.llm_client = llm_client
+        self.location_manager = location_manager
     
     @property
     def client(self) -> LLMClient:
         """Get the LLM client instance."""
         return self.llm_client
+
+    def _get_world_context(self, game_state: Dict[str, Any], context_type: str = "action") -> str:
+        """Get formatted world context for the current location.
+        
+        Args:
+            game_state: The current game state.
+            context_type: Type of context needed ('action', 'narrative', 'exploration', 'dm').
+            
+        Returns:
+            Formatted world context string.
+        """
+        if not self.location_manager or 'location' not in game_state:
+            logging.debug("No location found in game state")
+            return ""
+        
+        current_location = game_state['location']
+        logging.debug(f"Game state location: {current_location}")
+        
+        if context_type == "action":
+            context = self.location_manager.get_action_context(current_location)
+            return self.location_manager.format_context_for_prompt(context, include_dm_notes=False)
+        elif context_type == "narrative":
+            context = self.location_manager.get_narrative_context(current_location)
+            return self.location_manager.format_context_for_prompt(context, include_dm_notes=False)
+        elif context_type == "exploration":
+            context = self.location_manager.get_exploration_context(current_location)
+            return self.location_manager.format_context_for_prompt(context, include_dm_notes=False)
+        elif context_type == "dm":
+            context = self.location_manager.get_dm_context(current_location)
+            return self.location_manager.format_context_for_prompt(context, include_dm_notes=True)
+        else:
+            context = self.location_manager.get_action_context(current_location)
+            return self.location_manager.format_context_for_prompt(context, include_dm_notes=False)
 
     def turn(self, command: str, game_state: Dict[str, Any], context: List[Tuple[str, str]], debug: bool = False) -> str:
         """Process a single turn of the game.
@@ -53,14 +89,15 @@ class ActionResolver:
         '''
         
         # Get action resolution from LLM
+        world_context = self._get_world_context(game_state, "dm")
         system_prompt = f"{ACTION_RULES}\nGame State: {json.dumps(game_state, indent=4)}"
+        if world_context:
+            system_prompt += f"\n\n{world_context}"
         max_retries = 3
         retry_count = 0
 
         if debug:
-            print("Context:")
-            for context_entry in context:
-                print(context_entry)
+            print(system_prompt)
         
         while retry_count < max_retries:
             result = self.llm_client.make_structured_request(
@@ -99,9 +136,17 @@ class ActionResolver:
                 if action['action_type'] == 'quit_game':
                     return "Game ended."
             '''
+
+            # Handle movement requests
+            ok_to_roll = True
+            current_location = game_state['location']
+            if action['how_to_resolve'] == 'check_map':
+                if self.location_manager and not self.location_manager.can_move_to(current_location, action['target']):
+                    success_message += action['result_if_failed'] + '\n'
+                    ok_to_roll = False
             
             # Handle dice rolls
-            if action['dice_to_roll']:
+            if action['dice_to_roll'] and ok_to_roll:
                 try:
                     roll = self._roll_dice(action['dice_to_roll'], action['advantage'], action['disadvantage'])
                     if roll >= action['number_to_beat']:
@@ -117,7 +162,10 @@ class ActionResolver:
             print(f'Success message: {success_message}')
         
         # Get responses from LLM
+        world_context = self._get_world_context(game_state, "narrative")
         system_prompt = f"{GAME_RULES}\n{RESPONSE_RULES}\nGame State: {json.dumps(game_state, indent=4)}\nAction Result: {success_message}"
+        if world_context:
+            system_prompt += f"\n\n{world_context}"
         response = self.llm_client.make_structured_request(
             prompt=command,
             context=context,
@@ -130,12 +178,16 @@ class ActionResolver:
             print(json.dumps(response, indent=2))
         
         # Update game state based on responses
+        world_context = self._get_world_context(game_state, "dm")
         system_prompt = f"{GAME_RULES}\n{STATE_CHANGE_RULES}\nPrior State: {json.dumps(game_state, indent=4)}\n{response['DM_response']}"
+        if world_context:
+            system_prompt += f"\n\n{world_context}"
         new_game_state = self.llm_client.make_structured_request(
             prompt="update game state",
             system_prompt=system_prompt,
             schema=game_state_schema,
-            name='update_state'
+            name='update_state',
+            max_tokens=10000
         )
         if debug:
             print(json.dumps(new_game_state, indent=2))

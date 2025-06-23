@@ -18,6 +18,8 @@ from .actions import (
     response_and_state_schema
 )
 
+from .locations import game_map_schema
+
 __all__ = [
     # Character schemas
     'ability_schema',
@@ -33,5 +35,7 @@ __all__ = [
     # Action schemas
     'action_schema',
     'round_schema',
-    'response_schema'
+    'response_schema',
+
+    'game_map_schema'
 ]

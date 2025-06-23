@@ -69,7 +69,8 @@ class LLMClient:
         system_prompt: Optional[str] = None,
         schema: Optional[Dict[str, Any]] = None,
         name: str = "structure",
-        use_detailed_model: bool = False
+        use_detailed_model: bool = False,
+        max_tokens: int = 1000
     ) -> Dict[str, Any]:
         """Make a structured request to the LLM API.
         
@@ -105,14 +106,14 @@ class LLMClient:
                     schema=schema,
                     name=name,
                     temperature=0.7,
-                    max_tokens=1000,
+                    max_tokens=max_tokens,
                     use_detailed_model=use_detailed_model
                 )
             else:
                 return self.provider.chat_completion(
                     messages=messages,
                     temperature=0.7,
-                    max_tokens=1000
+                    max_tokens=max_tokens
                 )
                 
         except Exception as e:

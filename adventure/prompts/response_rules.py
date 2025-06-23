@@ -20,6 +20,9 @@ Player: this defines the player character and includes their current HP, accordi
 or lower the player will die.
 When the player is healed, increase HP but only up to the player's Max HP.
 
+The Player object tracks the player's location.  This must be one of the locations available in the provided world context.
+If the player has moved, pick the best matching location from the list of available locations in the context.
+
 The Player object also tracks Gold: this is an integer value tracking the number of gold pieces the player carries.
 When the player makes a purchase, subtract the purchase price from Gold.
 When the player sells an item, add the sale price to Gold.

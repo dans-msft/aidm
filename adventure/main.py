@@ -8,7 +8,7 @@ import json
 from typing import Optional, Tuple
 from pathlib import Path
 
-from .core import GameState, ActionResolver, CharacterManager
+from .core import GameState, ActionResolver, CharacterManager, LocationManager
 from .llm.client import LLMClient
 from .prompts import SELF_PLAY_PROMPT
 from .logging import setup_logging, get_logger
@@ -51,6 +51,8 @@ def parse_args() -> argparse.Namespace:
                        help='Path to the scenario file describing the game world')
     parser.add_argument('--player', type=str, required=False,
                        help='Path to the player file describing character attributes')
+    parser.add_argument('--world-map', type=str, default='world.json',
+                       help='Path to the world map JSON file (default: world.json)')
     parser.add_argument('--load-game', type=str, required=False,
                        help='Path to a saved game file to load')
     
@@ -107,9 +109,22 @@ def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver
         provider=args.provider
     )
     
+    # Initialize location manager
+    logger.debug("Loading world map...")
+    location_manager = None
+    if Path(args.world_map).exists():
+        try:
+            location_manager = LocationManager(world_file=args.world_map)
+            logger.info(f"Loaded world map from {args.world_map}")
+        except Exception as e:
+            logger.warning(f"Failed to load world map from {args.world_map}: {e}")
+            logger.info("Continuing without world map")
+    else:
+        logger.warning(f"World map file {args.world_map} not found, continuing without world map")
+    
     # Initialize game components
     logger.debug("Creating game components...")
-    action_resolver = ActionResolver(llm_client)
+    action_resolver = ActionResolver(llm_client, location_manager)
     character_manager = CharacterManager(llm_client)
     
     # Load or create game state
@@ -141,6 +156,11 @@ def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver
         # Make LLM call to determine initial game state
         system_prompt = STATE_CHANGE_RULES + '\n' + json.dumps(character, indent=4) + '\n' + \
             scenario_description + '\n' + player_description
+        
+        # Add world overview if location manager is available
+        if location_manager:
+            world_overview = location_manager.get_world_overview()
+            system_prompt += f'\n\n{world_overview}'
         
         initial_state = llm_client.make_structured_request(
             prompt=player_description,

@@ -1,0 +1,290 @@
+{
+  "regions": [
+    {
+      "name": "Eldoria",
+      "description": "A small town of about 250 people, with the usual buildings: an inn, a market, various shops, a small temple, and the lord's residence. It serves as a friendly base for adventurers.",
+      "DM_notes": "Town population is mostly humans and a few halflings. The lord is well-liked but worried about bandit and monster threats. The town is the main hub for clues and resources.",
+      "locations": [
+        {
+          "name": "Main Road Entrance",
+          "type": "road",
+          "description": "The main road leading into Eldoria, bustling with travelers and locals. From here you can enter the town or head into the surrounding forest.",
+          "DM_notes": "Starting location for players. The road is well maintained but somewhat wary travelers keep an eye on the forest edge.",
+          "paths": [
+            {
+              "direction": "east",
+              "destination": "Town Square",
+              "description": "A dirt road leading into the heart of Eldoria, lined with small shops and homes.",
+              "distance": "5 minutes walk",
+              "DM_notes": "Relatively safe path, occasional town guard patrols."
+            },
+            {
+              "direction": "west",
+              "destination": "Forest Edge",
+              "description": "A narrow path leading out of town into the dense and dark forest.",
+              "distance": "10 minutes walk",
+              "DM_notes": "Less safe, potential for encounters with bandits or wildlife."
+            }
+          ],
+          "items": []
+        },
+        {
+          "name": "Town Square",
+          "type": "town",
+          "description": "The central square of Eldoria, with a well and a notice board. Locals gather here for news and trade.",
+          "DM_notes": "Place to find rumors and quests. Occasional festivals.",
+          "paths": [
+            {
+              "direction": "west",
+              "destination": "Main Road Entrance",
+              "description": "The main road leading out of town towards the forest and beyond.",
+              "distance": "5 minutes walk",
+              "DM_notes": "See Main Road Entrance."
+            },
+            {
+              "direction": "north",
+              "destination": "Market",
+              "description": "A busy market area with stalls selling food, potions, and adventuring gear.",
+              "distance": "2 minutes walk",
+              "DM_notes": "Good place to buy supplies and gather information."
+            },
+            {
+              "direction": "south",
+              "destination": "Inn",
+              "description": "The town inn, popular with travelers and adventurers looking for rest or company.",
+              "distance": "2 minutes walk",
+              "DM_notes": "Potential place to meet NPCs and get lodging."
+            },
+            {
+              "direction": "east",
+              "destination": "Temple",
+              "description": "A small temple dedicated to a local deity.",
+              "distance": "3 minutes walk",
+              "DM_notes": "Place for healing and spiritual guidance."
+            },
+            {
+              "direction": "northeast",
+              "destination": "Lord's Residence",
+              "description": "A well-maintained house occupied by the lord of the region.",
+              "distance": "4 minutes walk",
+              "DM_notes": "The lord can provide quests or support."
+            }
+          ],
+          "items": []
+        },
+        {
+          "name": "Inn",
+          "type": "building",
+          "description": "A cozy inn with a common room and several guest rooms upstairs.",
+          "DM_notes": "Good place to rest and gather rumors. The innkeeper is friendly and knowledgeable.",
+          "paths": [
+            {
+              "direction": "north",
+              "destination": "Town Square",
+              "description": "Back to the town square.",
+              "distance": "2 minutes walk",
+              "DM_notes": ""
+            }
+          ],
+          "items": [
+            "Room key",
+            "Notice board with quests"
+          ]
+        },
+        {
+          "name": "Market",
+          "type": "building",
+          "description": "An open-air market with many stalls selling food, weapons, armor, and adventuring gear.",
+          "DM_notes": "Merchants are friendly but watch for pickpockets.",
+          "paths": [
+            {
+              "direction": "southwest",
+              "destination": "Town Square",
+              "description": "Return to the town square.",
+              "distance": "2 minutes walk",
+              "DM_notes": ""
+            }
+          ],
+          "items": [
+            "Healing potions",
+            "Basic weapons and armor"
+          ]
+        },
+        {
+          "name": "Temple",
+          "type": "building",
+          "description": "A quiet temple dedicated to a local deity offering minor healing and blessings.",
+          "DM_notes": "Priest can provide healing and minor blessings.",
+          "paths": [
+            {
+              "direction": "west",
+              "destination": "Town Square",
+              "description": "Back to the town square.",
+              "distance": "3 minutes walk",
+              "DM_notes": ""
+            }
+          ],
+          "items": [
+            "Healing herbs"
+          ]
+        },
+        {
+          "name": "Lord's Residence",
+          "type": "building",
+          "description": "A comfortable manor occupied by the lord of the region, who oversees local affairs.",
+          "DM_notes": "Lord can give quests and background information about the forest dangers.",
+          "paths": [
+            {
+              "direction": "southwest",
+              "destination": "Town Square",
+              "description": "Back to the town square.",
+              "distance": "4 minutes walk",
+              "DM_notes": ""
+            }
+          ],
+          "items": [
+            "Letter of introduction"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Deepwood Forest",
+      "description": "A tangled, dense forest surrounding Eldoria, difficult to navigate the deeper in you go. It contains ruins, caves, and several hostile camps.",
+      "DM_notes": "Forest is home to bandits, goblins, and other monsters. The terrain is tricky and can disorient the unwary. Clues to ruins are available in town.",
+      "locations": [
+        {
+          "name": "Forest Edge",
+          "type": "forest",
+          "description": "The edge of the Deepwood Forest just outside Eldoria, where the trees grow thick but the path is still visible.",
+          "DM_notes": "Relatively safe but keep alert for bandits or wild animals.",
+          "paths": [
+            {
+              "direction": "east",
+              "destination": "Main Road Entrance",
+              "description": "Path back to Eldoria's main road.",
+              "distance": "10 minutes walk",
+              "DM_notes": "See Eldoria main road."
+            },
+            {
+              "direction": "northwest",
+              "destination": "Bandit Camp",
+              "description": "A narrow, hidden trail leading deeper into the forest towards a bandit camp.",
+              "distance": "30 minutes walk",
+              "DM_notes": "High chance of bandit encounters."
+            },
+            {
+              "direction": "north",
+              "destination": "Monster Camp",
+              "description": "A rough path leading into the forest where goblin camps have been spotted.",
+              "distance": "40 minutes walk",
+              "DM_notes": "Dangerous area, expect combat."
+            },
+            {
+              "direction": "north northeast",
+              "destination": "Forest Ruins",
+              "description": "A faint trail that heads deeper into the forest towards ancient ruins.",
+              "distance": "1 hour walk",
+              "DM_notes": "Requires clues from town to find safely."
+            }
+          ],
+          "items": []
+        },
+        {
+          "name": "Bandit Camp",
+          "type": "camp",
+          "description": "A hidden bandit camp in the forest, with makeshift tents and a guarded perimeter.",
+          "DM_notes": "Bandits are hostile and may ambush adventurers. Loot includes stolen goods from Eldoria.",
+          "paths": [
+            {
+              "direction": "southeast",
+              "destination": "Forest Edge",
+              "description": "Path back to the forest edge and Eldoria.",
+              "distance": "30 minutes walk",
+              "DM_notes": "Bandits may try to intercept travelers."
+            }
+          ],
+          "items": [
+            "Stolen goods",
+            "Bandit weapons"
+          ]
+        },
+        {
+          "name": "Monster Camp",
+          "type": "camp",
+          "description": "A goblin camp deep in the forest, noisy and dangerous.",
+          "DM_notes": "Goblin warriors and hunters reside here. Frequent patrols near the camp.",
+          "paths": [
+            {
+              "direction": "south",
+              "destination": "Forest Edge",
+              "description": "Trail leading back towards Eldoria.",
+              "distance": "40 minutes walk",
+              "DM_notes": "High danger path."
+            }
+          ],
+          "items": [
+            "Goblin weapons",
+            "Crude traps"
+          ]
+        },
+        {
+          "name": "Forest Ruins",
+          "type": "ruins",
+          "description": "Ancient stone ruins overgrown with vines and moss, hidden deep in the forest.",
+          "DM_notes": "Contains traps and ancient treasures. Clues needed from town to find this location safely.",
+          "paths": [
+            {
+              "direction": "south southwest",
+              "destination": "Forest Edge",
+              "description": "Trail back to the forest edge.",
+              "distance": "1 hour walk",
+              "DM_notes": "Difficult terrain and possible monster encounters."
+            }
+          ],
+          "items": [
+            "Ancient artifact",
+            "Traps"
+          ]
+        },
+        {
+          "name": "Mountain Cave Entrance 1",
+          "type": "cave entrance",
+          "description": "A dark cave entrance at the forest's edge near the mountains, partially hidden by bushes.",
+          "DM_notes": "One of several entrances to an interconnected cave network. Contains dangerous creatures.",
+          "paths": [
+            {
+              "direction": "south",
+              "destination": "Forest Ruins",
+              "description": "Path back through the forest ruins area.",
+              "distance": "30 minutes walk",
+              "DM_notes": "Possible monster encounters."
+            }
+          ],
+          "items": [
+            "Torch",
+            "Cave map fragment"
+          ]
+        },
+        {
+          "name": "Mountain Cave Entrance 2",
+          "type": "cave entrance",
+          "description": "Another cave entrance near a rocky outcrop, leading into the mountain cave network.",
+          "DM_notes": "Less used entrance, guarded by monsters occasionally.",
+          "paths": [
+            {
+              "direction": "east",
+              "destination": "Bandit Camp",
+              "description": "A rough path through the forest near the bandit camp.",
+              "distance": "45 minutes walk",
+              "DM_notes": "Dangerous with chance of bandit encounter."
+            }
+          ],
+          "items": [
+            "Rope"
+          ]
+        }
+      ]
+    }
+  ]
+}

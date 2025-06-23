@@ -1,0 +1,17 @@
+The setting for this adventure consists of a town named Eldoria which is surrounded by a deep forest which butts up against
+mountains to the north.
+
+Eldoria is a small town of around 250 people.  It it a good place to meet up with other adventurers and contains
+the usual assortment of buildings: an inn, a market, individual shops selling goods, a small temple, and a nice residence occupied by
+the lord of the region.  It is a good base for adventure.
+
+The forest is tangled and difficult to navigate, especially farther away from town.  It has several key points of interest:
+- a set of old ruins, located deep within the forest.  The player is unlikely to find this without obtaining the necessary clues from the town.
+- a network of caves.  There are several entrances to this network scattered in different parts of the forest on the edge of the mountains.
+- bandit camps.  There are several camps in the woods which serve as a base for bandits who have been plaguing the town.
+- monster camps.  Deeper into the forest are some camps of monsters like goblins.  The player is likely to come close to one of these
+while looking for the ruins or the caves.
+
+The player's starting location is on the main road right outside of Eldoria.  From this location it should be possible to enter the
+town as well as venture into the surrounding forest.
+

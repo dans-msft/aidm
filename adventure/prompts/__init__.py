@@ -8,6 +8,7 @@ from .action_rules import (
     SELF_PLAY_PROMPT
 )
 from .character_rules import CHARACTER_RULES
+from .location_rules import WORLD_MAP_RULES
 
 __all__ = [
     # Core game rules
@@ -21,5 +22,7 @@ __all__ = [
     'ACTION_RULES',
     'CHARACTER_RULES',
     'DEATH_RULES',
-    'SELF_PLAY_PROMPT'
+    'SELF_PLAY_PROMPT',
+
+    'WORLD_MAP_RULES'
 ]
