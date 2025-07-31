@@ -22,7 +22,7 @@ class CharacterManager:
         """
         self.llm_client = llm_client
     
-    def create_character(self, description: str) -> Dict[str, Any]:
+    async def create_character(self, description: str) -> Dict[str, Any]:
         """Create a new character from a description.
         
         Args:
@@ -34,7 +34,7 @@ class CharacterManager:
         Raises:
             ValueError: If the LLM response is invalid.
         """
-        response = self.llm_client.make_structured_request(
+        response = await self.llm_client.make_structured_request(
             description,
             system_prompt=CHARACTER_RULES,
             schema=character_schema,

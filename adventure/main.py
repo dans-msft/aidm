@@ -1,6 +1,7 @@
 """Main entry point for the adventure game."""
 
 import argparse
+import asyncio
 import logging
 import sys
 import datetime
@@ -11,7 +12,7 @@ from pathlib import Path
 from .core import GameState, ActionResolver, CharacterManager, LocationManager
 from .llm.client import LLMClient
 from .prompts import SELF_PLAY_PROMPT
-from .logging import setup_logging, get_logger
+from .log_config import setup_logging, get_logger
 
 # Default configuration
 DEFAULT_ENDPOINT = "https://dasommer-oai-cmk.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2024-09-01-preview"
@@ -86,7 +87,7 @@ def parse_args() -> argparse.Namespace:
     
     return args
 
-def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver, CharacterManager]:
+async def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver, CharacterManager]:
     """Initialize the game components.
     
     Args:
@@ -141,7 +142,7 @@ def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver
         logger.debug(f"Reading player file: {args.player}")
         with open(args.player, 'r') as f:
             player_description = f.read()
-        character = character_manager.create_character(player_description)
+        character = await character_manager.create_character(player_description)
         
         # Create initial game state from scenario
         logger.debug(f"Reading scenario file: {args.scenario}")
@@ -162,7 +163,7 @@ def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver
             world_overview = location_manager.get_world_overview()
             system_prompt += f'\n\n{world_overview}'
         
-        initial_state = llm_client.make_structured_request(
+        initial_state = await llm_client.make_structured_request(
             prompt=player_description,
             system_prompt=system_prompt,
             schema=game_state_schema,
@@ -180,7 +181,7 @@ def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver
         if args.debug:
             print("Initial state:")
             print(json.dumps(initial_state, indent=2))
-        response = action_resolver.turn(
+        response = await action_resolver.turn(
             "begin the game",
             game_state.current_state,
             game_state.context,
@@ -190,7 +191,7 @@ def initialize_game(args: argparse.Namespace) -> Tuple[GameState, ActionResolver
     logger.info("Game initialization complete")
     return game_state, action_resolver, character_manager
 
-def game_loop(game_state: GameState, action_resolver: ActionResolver,
+async def game_loop(game_state: GameState, action_resolver: ActionResolver,
              character_manager: CharacterManager, args: argparse.Namespace) -> None:
     """Run the main game loop.
     
@@ -226,7 +227,7 @@ def game_loop(game_state: GameState, action_resolver: ActionResolver,
             # Get command
             if args.self_play:
                 logger.debug("Generating self-play command...")
-                command = llm_client.make_self_play_request(
+                command = await llm_client.make_self_play_request(
                     SELF_PLAY_PROMPT,
                     last_response,
                     self_play_context or []
@@ -239,7 +240,7 @@ def game_loop(game_state: GameState, action_resolver: ActionResolver,
             logger.debug(f"Processing command: {command}")
             
             # Process command using the new turn function
-            response = action_resolver.turn(
+            response = await action_resolver.turn(
                 command,
                 game_state.current_state,
                 game_state.context,
@@ -286,7 +287,7 @@ def game_loop(game_state: GameState, action_resolver: ActionResolver,
             print(f"\nAn error occurred: {e}")
             print("The game will attempt to continue...")
 
-def main() -> None:
+async def main() -> None:
     """Main entry point."""
     # Parse arguments
     args = parse_args()
@@ -297,15 +298,15 @@ def main() -> None:
     
     try:
         # Initialize game
-        game_state, action_resolver, character_manager = initialize_game(args)
+        game_state, action_resolver, character_manager = await initialize_game(args)
         logger.debug(f"Game state: {json.dumps(game_state.current_state, indent=4)}")
         
         # Run game loop
-        game_loop(game_state, action_resolver, character_manager, args)
+        await game_loop(game_state, action_resolver, character_manager, args)
     except Exception as e:
         logger.error("Fatal error:", exc_info=True)
         print(f"\nFatal error: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

@@ -3,6 +3,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 import json
+import asyncio
 
 class LLMError(Exception):
     """Base exception for LLM API errors."""
@@ -32,7 +33,7 @@ class LLMProvider(ABC):
     """Abstract base class for LLM providers."""
     
     @abstractmethod
-    def chat_completion(
+    async def chat_completion(
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
@@ -54,7 +55,7 @@ class LLMProvider(ABC):
         pass
     
     @abstractmethod
-    def structured_completion(
+    async def structured_completion(
         self,
         messages: List[Dict[str, str]],
         schema: Dict[str, Any],

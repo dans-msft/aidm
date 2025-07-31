@@ -2,7 +2,7 @@ from typing import Dict, Any, List, Optional, Union, cast, NoReturn, Sequence, T
 from .base import LLMProvider, LLMError
 import json
 import re
-from openai import OpenAI as OpenAIClient
+from openai import AsyncOpenAI as AsyncOpenAIClient
 from openai.types.chat import (
     ChatCompletionMessage,
     ChatCompletionMessageParam,
@@ -101,7 +101,7 @@ class OpenAI(LLMProvider):
             basic_model: The model to use for basic completions.
             detailed_model: The model to use for detailed completions.
         """
-        self.client = OpenAIClient(api_key=api_key)
+        self.client = AsyncOpenAIClient(api_key=api_key)
         self.basic_model = basic_model
         self.detailed_model = detailed_model
     
@@ -164,7 +164,7 @@ class OpenAI(LLMProvider):
         
         return converted_messages
     
-    def chat_completion(
+    async def chat_completion(
         self,
         messages: List[Dict[str, str]],
         temperature: float = 0.7,
@@ -186,7 +186,7 @@ class OpenAI(LLMProvider):
         """
         try:
             converted_messages = self._convert_messages(messages)
-            response: ChatCompletion = self.client.chat.completions.create(
+            response: ChatCompletion = await self.client.chat.completions.create(
                 model=self.basic_model,
                 messages=converted_messages,
                 temperature=temperature,
@@ -213,7 +213,7 @@ class OpenAI(LLMProvider):
         """Convert our message format to OpenAI ResponseInputParam format."""
         return tuple({"role": msg["role"], "content": msg["content"]} for msg in messages)
 
-    def structured_completion(
+    async def structured_completion(
         self,
         messages: List[Dict[str, str]],
         schema: Dict[str, Any],
@@ -243,7 +243,7 @@ class OpenAI(LLMProvider):
             # Convert messages to the format expected by the API
             input_messages = [{"role": msg["role"], "content": msg["content"]} for msg in messages]
             
-            response = self.client.responses.create(
+            response = await self.client.responses.create(
                 model=self.detailed_model if use_detailed_model else self.basic_model,
                 input=cast(Any, input_messages),  # Type cast since we know the structure matches
                 temperature=temperature,

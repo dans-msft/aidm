@@ -1,5 +1,4 @@
-import requests
-from requests import HTTPError, Response
+import aiohttp
 from typing import Dict, Any, List, Optional
 import json
 import re
@@ -64,11 +63,12 @@ class Anthropic(LLMProvider):
             "anthropic-version": "2023-06-01"
         }
 
-    def _handle_response(self, response: Response) -> Dict[str, Any]:
+    async def _handle_response(self, response: aiohttp.ClientResponse, response_text: str) -> Dict[str, Any]:
         """Handle the API response, extracting error details if present.
         
         Args:
             response: The response from the Anthropic API.
+            response_text: The response text content.
             
         Returns:
             The parsed JSON response.
@@ -78,13 +78,13 @@ class Anthropic(LLMProvider):
             LLMError: For other types of errors.
         """
         try:
-            content = response.json()
+            content = json.loads(response_text)
         except json.JSONDecodeError:
             # If we can't parse JSON, raise a generic error
             raise LLMError(
-                f"Invalid response from Anthropic API: {response.text}",
-                status_code=response.status_code,
-                response_content=response.text
+                f"Invalid response from Anthropic API: {response_text}",
+                status_code=response.status,
+                response_content=response_text
             )
         
         # Check for error in response
@@ -93,16 +93,16 @@ class Anthropic(LLMProvider):
             raise AnthropicError(
                 message=error.get("message", "Unknown error"),
                 error_type=error.get("type"),
-                status_code=response.status_code,
-                response_content=response.text
+                status_code=response.status,
+                response_content=response_text
             )
         
         # If no error but status code indicates failure, raise generic error
         if not response.ok:
             raise LLMError(
-                f"Anthropic API request failed: {response.text}",
-                status_code=response.status_code,
-                response_content=response.text
+                f"Anthropic API request failed: {response_text}",
+                status_code=response.status,
+                response_content=response_text
             )
         
         return content
@@ -154,7 +154,7 @@ class Anthropic(LLMProvider):
             response_content=text
         )
 
-    def chat_completion(
+    async def chat_completion(
         self,
         messages: List[Dict[str, Any]],
         temperature: float = 0.7,
@@ -196,9 +196,11 @@ class Anthropic(LLMProvider):
                 **kwargs
             }
 
-            response = requests.post(self.endpoint, headers=self.headers, json=payload)
-            content = self._handle_response(response)
-            result = content.get("content", [{}])[0].get("text", "")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.endpoint, headers=self.headers, json=payload) as response:
+                    response_text = await response.text()
+                    content = await self._handle_response(response, response_text)
+                    result = content.get("content", [{}])[0].get("text", "")
             
             duration = time.time() - start_time
             logger.info(f"Anthropic chat_completion request completed in {duration:.2f} seconds")
@@ -209,7 +211,7 @@ class Anthropic(LLMProvider):
             logger.error(f"Anthropic chat_completion request failed after {duration:.2f} seconds: {str(e)}")
             raise
 
-    def structured_completion(
+    async def structured_completion(
         self,
         messages: List[Dict[str, Any]],
         schema: Dict[str, Any],
@@ -269,8 +271,10 @@ class Anthropic(LLMProvider):
             if system_content.strip():
                 payload["system"] = system_content.strip()
             
-            response = requests.post(self.endpoint, headers=self.headers, json=payload)
-            content = self._handle_response(response)
+            async with aiohttp.ClientSession() as session:
+                async with session.post(self.endpoint, headers=self.headers, json=payload) as response:
+                    response_text = await response.text()
+                    content = await self._handle_response(response, response_text)
             
             try:
                 if not content.get("content"):

@@ -3,7 +3,6 @@
 import json
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union, NoReturn
-from requests import HTTPError, Response
 
 from .base import LLMProvider, LLMError
 from .openai import OpenAI
@@ -39,30 +38,22 @@ class LLMClient:
         else:
             raise ValueError(f"Unsupported provider: {provider}")
     
-    def _handle_error(self, error: Exception, response: Optional[Response] = None) -> NoReturn:
+    def _handle_error(self, error: Exception) -> NoReturn:
         """Handle API errors and raise detailed LLMError.
         
         Args:
             error: The original exception.
-            response: Optional response object from the request.
             
         Raises:
             LLMError: Detailed error with status code and response content.
         """
-        if isinstance(error, HTTPError) and response is not None:
-            try:
-                content = response.text
-            except Exception:
-                content = "Unable to read response content"
-            raise LLMError(
-                message=str(error),
-                status_code=response.status_code,
-                response_content=content
-            )
+        # If it's already an LLMError, re-raise it
+        if isinstance(error, LLMError):
+            raise error
         # For other types of errors, wrap them in LLMError
         raise LLMError(f"Unexpected error: {str(error)}")
     
-    def make_structured_request(
+    async def make_structured_request(
         self,
         prompt: Optional[str],
         context: List[Tuple[str, str]] = [],
@@ -101,7 +92,7 @@ class LLMClient:
                 messages.append({"role": "user", "content": prompt})
             
             if schema:
-                return self.provider.structured_completion(
+                return await self.provider.structured_completion(
                     messages=messages,
                     schema=schema,
                     name=name,
@@ -110,16 +101,17 @@ class LLMClient:
                     use_detailed_model=use_detailed_model
                 )
             else:
-                return self.provider.chat_completion(
+                response = await self.provider.chat_completion(
                     messages=messages,
                     temperature=0.7,
                     max_tokens=max_tokens
                 )
+                return response
                 
         except Exception as e:
             self._handle_error(e)  # type: ignore  # This will never return normally
     
-    def make_self_play_request(
+    async def make_self_play_request(
         self,
         prompt: str,
         system_prompt: Optional[str] = None,
@@ -150,11 +142,11 @@ class LLMClient:
             
             messages.append({"role": "user", "content": prompt})
             
-            response = self.provider.chat_completion(
+            response = await self.provider.chat_completion(
                 messages=messages,
                 temperature=0.7,
                 max_tokens=1000
             )
-            return response["message"]["content"]
+            return response.get("content", "")
         except Exception as e:
             self._handle_error(e)  # type: ignore  # This will never return normally 

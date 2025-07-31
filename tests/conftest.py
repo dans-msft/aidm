@@ -8,7 +8,7 @@ from unittest.mock import MagicMock
 
 from adventure.core import GameState, ActionResolver, CharacterManager
 from adventure.llm.client import LLMClient
-from adventure.logging import setup_logging
+from adventure.log_config import setup_logging
 
 # Test data directory
 TEST_DATA_DIR = Path(__file__).parent / "data"

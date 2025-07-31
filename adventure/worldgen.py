@@ -1,6 +1,7 @@
 """Main entry point for the adventure game."""
 
 import argparse
+import asyncio
 import logging
 import sys
 import datetime
@@ -10,7 +11,7 @@ from pathlib import Path
 
 from .llm.client import LLMClient
 from .prompts import WORLD_MAP_RULES
-from .logging import setup_logging, get_logger
+from .log_config import setup_logging, get_logger
 
 DEFAULT_LOG_DIR = "logs"
 
@@ -48,7 +49,7 @@ def parse_args() -> argparse.Namespace:
     
     return args
 
-def create_world(args: argparse.Namespace) -> Dict[str, Any]:
+async def create_world(args: argparse.Namespace) -> Dict[str, Any]:
     """Initialize the game components.
     
     Args:
@@ -81,7 +82,7 @@ def create_world(args: argparse.Namespace) -> Dict[str, Any]:
     # Make LLM call to generate the world map
     system_prompt = WORLD_MAP_RULES
     
-    world_map = llm_client.make_structured_request(
+    world_map = await llm_client.make_structured_request(
         prompt=scenario_description,
         system_prompt=system_prompt,
         schema=game_map_schema,
@@ -92,14 +93,14 @@ def create_world(args: argparse.Namespace) -> Dict[str, Any]:
     print(json.dumps(world_map, indent=2))
     return world_map
 
-def main() -> None:
+async def main() -> None:
     """Main entry point."""
     # Parse arguments
     args = parse_args()
     
     # Set up logging
     logger = setup_logging(args.log_file, args.debug)
-    world_map = create_world(args)
+    world_map = await create_world(args)
     
     # Write world map to output file
     logger.info(f"Writing world map to {args.out}")
@@ -108,4 +109,4 @@ def main() -> None:
     logger.info("World map written successfully")
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

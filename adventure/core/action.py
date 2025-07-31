@@ -11,6 +11,7 @@ from ..prompts import ACTION_RULES, GAME_RULES, RESPONSE_RULES, STATE_CHANGE_RUL
 from adventure.llm.client import LLMClient
 from adventure.core.game_state import GameState
 from adventure.core.location import LocationManager
+from adventure.core.state_validator import StateValidator
 
 class ActionResolver:
     """Resolves player commands into game actions."""
@@ -24,6 +25,7 @@ class ActionResolver:
         """
         self.llm_client = llm_client
         self.location_manager = location_manager
+        self.state_validator = StateValidator()
     
     @property
     def client(self) -> LLMClient:
@@ -63,7 +65,7 @@ class ActionResolver:
             context = self.location_manager.get_action_context(current_location)
             return self.location_manager.format_context_for_prompt(context, include_dm_notes=False)
 
-    def turn(self, command: str, game_state: Dict[str, Any], context: List[Tuple[str, str]], debug: bool = False) -> str:
+    async def turn(self, command: str, game_state: Dict[str, Any], context: List[Tuple[str, str]], debug: bool = False) -> str:
         """Process a single turn of the game.
         
         Args:
@@ -100,7 +102,7 @@ class ActionResolver:
             print(system_prompt)
         
         while retry_count < max_retries:
-            result = self.llm_client.make_structured_request(
+            result = await self.llm_client.make_structured_request(
                 prompt=command,
                 context=context,
                 system_prompt=system_prompt,
@@ -166,7 +168,7 @@ class ActionResolver:
         system_prompt = f"{GAME_RULES}\n{RESPONSE_RULES}\nGame State: {json.dumps(game_state, indent=4)}\nAction Result: {success_message}"
         if world_context:
             system_prompt += f"\n\n{world_context}"
-        response = self.llm_client.make_structured_request(
+        response = await self.llm_client.make_structured_request(
             prompt=command,
             context=context,
             system_prompt=system_prompt,
@@ -177,20 +179,55 @@ class ActionResolver:
         if debug:
             print(json.dumps(response, indent=2))
         
-        # Update game state based on responses
+        # Update game state based on responses with validation and retry
         world_context = self._get_world_context(game_state, "dm")
-        system_prompt = f"{GAME_RULES}\n{STATE_CHANGE_RULES}\nPrior State: {json.dumps(game_state, indent=4)}\n{response['DM_response']}"
+        base_system_prompt = f"{GAME_RULES}\n{STATE_CHANGE_RULES}\nPrior State: {json.dumps(game_state, indent=4)}\n{response['DM_response']}"
         if world_context:
-            system_prompt += f"\n\n{world_context}"
-        new_game_state = self.llm_client.make_structured_request(
-            prompt="update game state",
-            system_prompt=system_prompt,
-            schema=game_state_schema,
-            name='update_state',
-            max_tokens=10000
-        )
-        if debug:
-            print(json.dumps(new_game_state, indent=2))
+            base_system_prompt += f"\n\n{world_context}"
+        
+        # Try to get a valid state update with retries
+        max_state_retries = 2
+        new_game_state = None
+        validation_feedback = ""
+        
+        for attempt in range(max_state_retries + 1):
+            system_prompt = base_system_prompt + validation_feedback
+            
+            candidate_state = await self.llm_client.make_structured_request(
+                prompt="update game state",
+                system_prompt=system_prompt,
+                schema=game_state_schema,
+                name='update_state',
+                max_tokens=10000
+            )
+            
+            if debug:
+                print(f"State update attempt {attempt + 1}:")
+                print(json.dumps(candidate_state, indent=2))
+            
+            # Validate the proposed state changes
+            validation_result = self.state_validator.validate_state_changes(
+                game_state, candidate_state, success_message
+            )
+            
+            if validation_result.is_valid or attempt == max_state_retries:
+                # Either validation passed or we're out of retries
+                if validation_result.is_valid:
+                    new_game_state = candidate_state
+                    if debug:
+                        print("State validation passed")
+                else:
+                    # Use defensive merging as fallback
+                    if debug:
+                        print(f"State validation failed after {max_state_retries + 1} attempts, using defensive merge")
+                        print(f"Validation issues: {validation_result.issues}")
+                    new_game_state = self.state_validator.merge_states_defensively(game_state, candidate_state)
+                break
+            else:
+                # Validation failed, prepare feedback for retry
+                if debug:
+                    print(f"State validation failed on attempt {attempt + 1}: {validation_result.issues}")
+                validation_feedback = f"\n\nVALIDATION ERRORS FROM PREVIOUS ATTEMPT:\n{chr(10).join(validation_result.issues)}\nPlease fix these issues and preserve unchanged fields exactly."
 
         '''
         system_prompt = f"{GAME_RULES}\n{RESPONSE_AND_STATE_CHANGE_RULES}\nGame State: {json.dumps(game_state, indent=4)}\nAction Result: {success_message}"
@@ -209,7 +246,7 @@ class ActionResolver:
         if 'player' in new_game_state and 'HP' in new_game_state['player'] and new_game_state['player']['HP'] <= 0:
             print("Detected death")
             prompt = f"Game State: {json.dumps(new_game_state, indent=4)}"
-            death_response = self.llm_client.make_structured_request(
+            death_response = await self.llm_client.make_structured_request(
                 prompt=prompt,
                 system_prompt=DEATH_RULES,
                 schema=response_schema
